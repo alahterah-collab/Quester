@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Glow Up Quest</title>
+<meta name="description" content="Game RPG level-up untuk perjalanan glow up dan olahraga kamu">
+<meta name="theme-color" content="#1C1522">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GlowUp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #1C1522;
+    --bg-2: #241A2C;
+    --panel: #2B2036;
+    --panel-2: #362943;
+    --line: #47374F;
+    --text: #F3EAF6;
+    --text-dim: #B4A2BE;
+    --text-faint: #83718C;
+    --glow: #F2B84B;
+    --glow-dim: #7A5C2A;
+    --str: #FF6B5B;
+    --end: #59D68C;
+    --agi: #45D0D6;
+    --int: #A78BFA;
+    --spd: #FFD666;
+    --danger: #FF6B5B;
+    --radius-s: 10px;
+    --radius-m: 16px;
+    --radius-l: 22px;
+  }
+  *{ box-sizing: border-box; }
+  html,body{
+    margin:0; padding:0;
+    background: radial-gradient(circle at 50% -10%, #33243F 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap{
+    max-width: 460px;
+    margin: 0 auto;
+    padding: 22px 16px 60px;
+    min-height: 100vh;
+    position: relative;
+  }
+  h1,h2,h3{ font-family: 'Rajdhani', sans-serif; margin:0; }
+  .eyebrow{
+    font-family:'Rajdhani', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    color: var(--text-faint);
+    font-weight: 600;
+  }
+
+  /* ---------- Loading ---------- */
+  #loading{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height: 70vh; gap: 14px; color: var(--text-dim);
+  }
+  .spinner{
+    width: 34px; height:34px; border-radius:50%;
+    border: 3px solid var(--line); border-top-color: var(--glow);
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin{ to{ transform: rotate(360deg);} }
+
+  #app{ display:none; }
+  #app.ready{ display:block; }
+
+  /* ---------- Header / Hero ---------- */
+  .hero{
+    position: relative;
+    background: linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-l);
+    padding: 22px 18px 18px;
+    overflow: hidden;
+  }
+  .hero::before{
+    content:'';
+    position:absolute; top:-60%; left:50%; transform: translateX(-50%);
+    width: 260px; height:260px; border-radius:50%;
+    background: radial-gradient(circle, rgba(242,184,75,0.28) 0%, rgba(242,184,75,0) 70%);
+    pointer-events:none;
+  }
+  .hero-top{
+    display:flex; align-items:center; justify-content:space-between; position:relative; z-index:1;
+  }
+  .level-badge{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    width: 58px; height:58px; border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--glow);
+    box-shadow: 0 0 14px rgba(242,184,75,0.45);
+    flex-shrink:0;
+  }
+  .level-badge .lv-num{ font-family:'Rajdhani'; font-weight:700; font-size:22px; line-height:1; color: var(--glow); }
+  .level-badge .lv-lbl{ font-size:9px; letter-spacing:0.05em; color: var(--text-faint); margin-top:1px; }
+  .hero-name{ flex:1; padding: 0 12px; }
+  .hero-name .title-text{ font-family:'Rajdhani'; font-weight:700; font-size: 20px; color: var(--text); }
+  .hero-name .subtitle{ font-size: 12.5px; color: var(--text-dim); margin-top:2px; }
+
+  .xp-row{ margin-top: 16px; position: relative; z-index:1; }
+  .xp-labels{ display:flex; justify-content:space-between; font-size: 11.5px; color: var(--text-faint); margin-bottom: 5px; font-family:'Rajdhani'; letter-spacing:0.03em; }
+  .xp-track{ height: 9px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); overflow:hidden; }
+  .xp-fill{ height:100%; border-radius: 999px; background: linear-gradient(90deg, #B87F1D, var(--glow)); transition: width 0.5s ease; }
+
+  /* ---------- Radar ---------- */
+  .radar-card{ margin-top: 14px; }
+  .radar-svg{ display:block; margin: 0 auto; }
+
+  /* ---------- Section shell ---------- */
+  .section{ margin-top: 22px; }
+  .section-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom: 10px; }
+  .section-head h2{ font-size: 17px; font-weight:700; color: var(--text); }
+  .section-head .hint{ font-size:11.5px; color: var(--text-faint); }
+
+  .points-banner{
+    display:none;
+    align-items:center; justify-content:space-between;
+    background: linear-gradient(90deg, rgba(242,184,75,0.16), rgba(242,184,75,0.04));
+    border: 1px solid var(--glow-dim);
+    border-radius: var(--radius-m);
+    padding: 11px 14px;
+    margin-bottom: 12px;
+    font-family:'Rajdhani'; font-weight:600; font-size:14px;
+    color: var(--glow);
+  }
+  .points-banner.show{ display:flex; }
+
+  /* ---------- Stat rows ---------- */
+  .stat-row{
+    display:flex; align-items:center; gap: 12px;
+    background: var(--panel); border:1px solid var(--line);
+    border-radius: var(--radius-m); padding: 11px 12px; margin-bottom: 9px;
+  }
+  .stat-icon{
+    width: 34px; height:34px; border-radius:10px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:16px;
+  }
+  .stat-mid{ flex:1; min-width:0; }
+  .stat-name-row{ display:flex; justify-content:space-between; align-items:baseline; }
+  .stat-label{ font-family:'Rajdhani'; font-weight:600; font-size:14.5px; }
+  .stat-val{ font-family:'Rajdhani'; font-weight:700; font-size:15px; color: var(--text-dim); }
+  .stat-bar-track{ height:6px; border-radius:999px; background: var(--bg); margin-top:6px; overflow:hidden; }
+  .stat-bar-fill{ height:100%; border-radius:999px; transition: width 0.4s ease; }
+  .stat-plus{
+    width: 30px; height:30px; border-radius:50%; flex-shrink:0;
+    border: 1px solid var(--glow-dim); background: rgba(242,184,75,0.12); color: var(--glow);
+    font-family:'Rajdhani'; font-weight:700; font-size:17px;
+    display:none; align-items:center; justify-content:center; cursor:pointer;
+    transition: transform 0.15s ease;
+  }
+  .stat-plus.show{ display:flex; }
+  .stat-plus:active{ transform: scale(0.9); }
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    font-family:'Rajdhani'; font-weight:700; font-size: 15px; letter-spacing:0.01em;
+    border-radius: var(--radius-m); border: none; padding: 13px 16px;
+    cursor:pointer; width:100%; text-align:center;
+  }
+  .btn-primary{ background: var(--glow); color: #2A1B05; }
+  .btn-primary:active{ transform: scale(0.985); }
+  .btn-secondary{
+    background: var(--panel); color: var(--text); border: 1px solid var(--line);
+  }
+  .btn-ghost{
+    background:transparent; color: var(--text-faint); border: 1px dashed var(--line); font-size:13px; padding: 10px;
+  }
+
+  /* ---------- Log form ---------- */
+  .log-panel{
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-m);
+    padding: 14px; margin-top: 4px; display:none;
+  }
+  .log-panel.open{ display:block; }
+  .chip-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0 14px; }
+  .chip{
+    display:flex; align-items:center; gap:8px;
+    padding: 9px 10px; border-radius: var(--radius-s); border: 1px solid var(--line);
+    background: var(--bg); font-size:13px; cursor:pointer; font-family:'Rajdhani'; font-weight:600;
+  }
+  .chip.active{ border-color: var(--glow); background: rgba(242,184,75,0.1); color: var(--glow); }
+  .stat-tabs{ display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
+  .stat-tab{
+    padding: 7px 11px; border-radius: 999px; border: 1px solid var(--line);
+    background: var(--bg); font-size: 12.5px; font-family:'Rajdhani'; font-weight:600; color: var(--text-dim); cursor:pointer;
+  }
+  .stat-tab.active{ color: #1a1a1a; border-color: transparent; }
+  .field-label{ font-size:12px; color: var(--text-faint); margin: 10px 0 5px; font-family:'Rajdhani'; letter-spacing:0.03em; }
+  input[type=number], input[type=text]{
+    width:100%; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-s);
+    padding: 10px 12px; color: var(--text); font-size:14px; font-family:'Manrope';
+  }
+  input:focus{ outline:none; border-color: var(--glow); }
+  .log-actions{ display:flex; gap:8px; margin-top:14px; }
+  .log-actions .btn{ flex:1; }
+
+  /* ---------- Activity list ---------- */
+  .activity-item{
+    display:flex; align-items:center; gap:10px; padding: 9px 2px;
+    border-bottom: 1px solid var(--line);
+  }
+  .activity-item:last-child{ border-bottom:none; }
+  .activity-dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .activity-info{ flex:1; min-width:0; }
+  .activity-info .aname{ font-size:13.5px; font-weight:600; }
+  .activity-info .ameta{ font-size:11.5px; color: var(--text-faint); }
+  .activity-xp{ font-family:'Rajdhani'; font-weight:700; font-size:13px; color: var(--glow); flex-shrink:0; }
+  .empty-note{ font-size: 12.5px; color: var(--text-faint); padding: 6px 2px; }
+
+  /* ---------- Quests ---------- */
+  .quest-card{
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-m);
+    padding: 12px 13px; margin-bottom: 9px; display:flex; gap:11px; align-items:flex-start;
+  }
+  .quest-card.locked{ opacity: 0.55; }
+  .quest-card.fresh{ border-color: var(--glow); box-shadow: 0 0 0 1px var(--glow-dim); }
+  .quest-icon{ font-size: 19px; margin-top:1px; }
+  .quest-body{ flex:1; min-width:0; }
+  .quest-title{ font-family:'Rajdhani'; font-weight:700; font-size:14.5px; }
+  .quest-desc{ font-size:12px; color: var(--text-dim); margin-top:2px; line-height:1.4; }
+  .quest-reward{ font-size:11.5px; color: var(--glow); margin-top:5px; font-family:'Rajdhani'; font-weight:600; }
+
+  /* ---------- Skills ---------- */
+  .skill-grid{ display:flex; flex-wrap:wrap; gap:8px; }
+  .skill-badge{
+    display:flex; align-items:center; gap:6px;
+    background: linear-gradient(135deg, rgba(242,184,75,0.16), rgba(242,184,75,0.04));
+    border: 1px solid var(--glow-dim); color: var(--glow);
+    border-radius: 999px; padding: 7px 12px; font-size:12.5px; font-family:'Rajdhani'; font-weight:700;
+  }
+
+  .reset-row{ margin-top: 30px; text-align:center; }
+  .reset-row .btn-ghost{ width: auto; display:inline-block; }
+
+  /* ---------- Toast ---------- */
+  #toast-container{
+    position: fixed; top: 16px; left:50%; transform: translateX(-50%);
+    z-index: 999; display:flex; flex-direction:column; gap:8px; width: calc(100% - 32px); max-width: 428px;
+  }
+  .toast{
+    background: #1C1522; border: 1px solid var(--glow); border-radius: var(--radius-m);
+    padding: 12px 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    animation: toast-in 0.25s ease, toast-out 0.4s ease 3.1s forwards;
+  }
+  .toast .t-title{ font-family:'Rajdhani'; font-weight:700; font-size:14.5px; color: var(--glow); }
+  .toast .t-sub{ font-size:12px; color: var(--text-dim); margin-top:2px; }
+  @keyframes toast-in{ from{ opacity:0; transform: translateY(-10px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes toast-out{ to{ opacity:0; transform: translateY(-10px);} }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<div class="wrap">
+  <div id="loading">
+    <div class="spinner"></div>
+    <div>Memuat progres kamu…</div>
+  </div>
+
+  <div id="app">
+    <!-- HERO -->
+    <div class="hero">
+      <div class="hero-top">
+        <div class="level-badge">
+          <div class="lv-num" id="lvNum">1</div>
+          <div class="lv-lbl">LVL</div>
+        </div>
+        <div class="hero-name">
+          <div class="title-text" id="charTitle">Pemula Lemah</div>
+          <div class="subtitle" id="charSub">Baru mulai perjalanan glow up</div>
+        </div>
+      </div>
+      <div class="xp-row">
+        <div class="xp-labels">
+          <span id="xpNow">0 XP</span>
+          <span id="xpNeed">/ 80 XP ke level berikutnya</span>
+        </div>
+        <div class="xp-track"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
+      </div>
+
+      <div class="radar-card">
+        <svg class="radar-svg" id="radarSvg" width="280" height="240" viewBox="0 0 280 240"></svg>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="section">
+      <div class="section-head">
+        <h2>Stat</h2>
+        <span class="hint" id="statHint">total dari naik level</span>
+      </div>
+
+      <div class="points-banner" id="pointsBanner">
+        <span id="pointsText">Kamu punya 0 poin stat!</span>
+        <span>👉 alokasikan</span>
+      </div>
+
+      <div id="statList"></div>
+    </div>
+
+    <!-- LOG ACTIVITY -->
+    <div class="section">
+      <div class="section-head">
+        <h2>Latihan</h2>
+      </div>
+      <button class="btn btn-primary" id="openLogBtn">+ Catat Aktivitas Olahraga</button>
+
+      <div class="log-panel" id="logPanel">
+        <div class="field-label">Pilih stat</div>
+        <div class="stat-tabs" id="statTabs"></div>
+
+        <div class="field-label">Pilih aktivitas</div>
+        <div class="chip-grid" id="activityChips"></div>
+
+        <div class="field-label">Durasi (menit)</div>
+        <input type="number" id="durationInput" min="1" max="180" value="15">
+
+        <div class="log-actions">
+          <button class="btn btn-secondary" id="cancelLogBtn">Batal</button>
+          <button class="btn btn-primary" id="submitLogBtn">Catat & Dapatkan XP</button>
+        </div>
+      </div>
+
+      <div class="section" style="margin-top:16px;">
+        <div class="section-head">
+          <h2 style="font-size:14.5px;">Riwayat terbaru</h2>
+        </div>
+        <div id="activityList"></div>
+      </div>
+    </div>
+
+    <!-- QUESTS -->
+    <div class="section">
+      <div class="section-head">
+        <h2>Secret Quest</h2>
+        <span class="hint">tersembunyi sampai terbuka</span>
+      </div>
+      <div id="questList"></div>
+    </div>
+
+    <!-- SKILLS -->
+    <div class="section" id="skillSection" style="display:none;">
+      <div class="section-head">
+        <h2>Keahlian</h2>
+      </div>
+      <div class="skill-grid" id="skillGrid"></div>
+    </div>
+
+    <div class="reset-row">
+      <button class="btn-ghost" id="resetBtn">Mulai ulang progres</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const STORAGE_KEY = "glowup_character";
+
+  const STAT_META = {
+    str:{ label:"Kekuatan", short:"STR", color:"var(--str)", icon:"💪" },
+    end:{ label:"Ketahanan", short:"END", color:"var(--end)", icon:"🛡️" },
+    agi:{ label:"Kelincahan", short:"AGI", color:"var(--agi)", icon:"🤸" },
+    int:{ label:"Kepintaran", short:"INT", color:"var(--int)", icon:"🧠" },
+    spd:{ label:"Kecepatan", short:"SPD", color:"var(--spd)", icon:"⚡" },
+  };
+  const STAT_ORDER = ["str","end","agi","int","spd"];
+
+  const ACTIVITIES = {
+    str: [{n:"Push Up", i:"💪"}, {n:"Angkat Beban", i:"🏋️"}, {n:"Plank", i:"🧱"}, {n:"Sit Up", i:"🔺"}],
+    end: [{n:"Jogging", i:"🏃"}, {n:"Bersepeda", i:"🚴"}, {n:"Renang", i:"🏊"}, {n:"Naik Turun Tangga", i:"🪜"}],
+    agi: [{n:"Lompat Tali", i:"🪢"}, {n:"Yoga", i:"🧘"}, {n:"Stretching", i:"🤾"}, {n:"Latihan Keseimbangan", i:"🎯"}],
+    int: [{n:"Baca Buku", i:"📖"}, {n:"Belajar Teknik", i:"📚"}, {n:"Rencana Latihan", i:"📝"}, {n:"Nonton Tutorial", i:"🎥"}],
+    spd: [{n:"Sprint", i:"⚡"}, {n:"Lari Cepat", i:"🔥"}, {n:"Interval Run", i:"⏱️"}, {n:"Shuttle Run", i:"↔️"}],
+  };
+
+  const QUESTS = [
+    { id:"q_serbabisa", icon:"🌀", name:"Serba Bisa", desc:"Latih ke-5 stat, masing-masing minimal sekali.",
+      rewardText:"+5 poin stat · Keahlian: Serba Bisa", points:5, skill:"Serba Bisa",
+      check: s => STAT_ORDER.every(k => (s.statActivityCounts[k]||0) > 0) },
+    { id:"q_konsisten", icon:"🔥", name:"Konsisten Membara", desc:"Catat aktivitas di 3 hari yang berbeda.",
+      rewardText:"+3 poin stat · Keahlian: Semangat Membara", points:3, skill:"Semangat Membara",
+      check: s => (s.daysLogged||[]).length >= 3 },
+    { id:"q_maraton", icon:"🏔️", name:"Maraton Mental", desc:"Kumpulkan total 300 menit latihan.",
+      rewardText:"+5 poin stat · Keahlian: Baja Tak Tertembus", points:5, skill:"Baja Tak Tertembus",
+      check: s => (s.totalMinutes||0) >= 300 },
+    { id:"q_sprinter", icon:"💨", name:"Sprinter Sejati", desc:"Catat aktivitas Kecepatan 5 kali.",
+      rewardText:"+3 poin stat · Keahlian: Kaki Kilat", points:3, skill:"Kaki Kilat",
+      check: s => (s.statActivityCounts.spd||0) >= 5 },
+    { id:"q_malam", icon:"🌙", name:"Insting Malam", desc:"Catat aktivitas antara jam 22.00–04.00.",
+      rewardText:"+2 poin stat · Keahlian: Kelelawar Malam", points:2, skill:"Kelelawar Malam",
+      check: s => !!s.hasNightLog },
+    { id:"q_pagi", icon:"🌅", name:"Semangat Fajar", desc:"Catat aktivitas antara jam 04.00–07.00.",
+      rewardText:"+2 poin stat · Keahlian: Ayam Jantan", points:2, skill:"Ayam Jantan",
+      check: s => !!s.hasEarlyLog },
+    { id:"q_legenda", icon:"👑", name:"Sang Legenda", desc:"Capai Level 10.",
+      rewardText:"+10 poin stat · Keahlian: Aura Legendaris", points:10, skill:"Aura Legendaris",
+      check: s => s.level >= 10 },
+  ];
+
+  function defaultState(){
+    return {
+      level: 1,
+      xp: 0,
+      stats: { str:1, end:1, agi:1, int:1, spd:1 },
+      unallocated: 0,
+      totalMinutes: 0,
+      statActivityCounts: { str:0, end:0, agi:0, int:0, spd:0 },
+      daysLogged: [],
+      hasNightLog: false,
+      hasEarlyLog: false,
+      unlockedQuests: [],
+      skills: [],
+      log: [],
+    };
+  }
+
+  let state = null;
+  let selectedStat = "str";
+  let selectedActivity = ACTIVITIES.str[0].n;
+
+  function xpToNext(level){ return 80 + (level - 1) * 40; }
+
+  function charTitleFor(level){
+    if(level >= 10) return ["Legenda Kebugaran", "Aura-mu terasa sampai dari kejauhan"];
+    if(level >= 6) return ["Atlet Berkembang", "Progres mulai terlihat jelas"];
+    if(level >= 3) return ["Petarung Pemula", "Sudah mulai terbiasa berkeringat"];
+    return ["Pemula Lemah", "Baru mulai perjalanan glow up"];
+  }
+
+  async function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        const parsed = JSON.parse(raw);
+        state = Object.assign(defaultState(), parsed);
+        state.stats = Object.assign({str:1,end:1,agi:1,int:1,spd:1}, parsed.stats);
+        state.statActivityCounts = Object.assign({str:0,end:0,agi:0,int:0,spd:0}, parsed.statActivityCounts);
+      } else {
+        state = defaultState();
+      }
+    } catch(e){
+      state = defaultState();
+    }
+  }
+
+  async function saveState(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch(e){
+      console.error("Gagal menyimpan progres:", e);
+    }
+  }
+
+  function showToast(title, sub){
+    const c = document.getElementById("toast-container");
+    const el = document.createElement("div");
+    el.className = "toast";
+    el.innerHTML = '<div class="t-title">' + title + '</div><div class="t-sub">' + sub + '</div>';
+    c.appendChild(el);
+    setTimeout(() => { if(el.parentNode) el.parentNode.removeChild(el); }, 3600);
+  }
+
+  function addXp(amount){
+    state.xp += amount;
+    let leveled = 0;
+    while(state.xp >= xpToNext(state.level)){
+      state.xp -= xpToNext(state.level);
+      state.level += 1;
+      state.unallocated += 5;
+      leveled++;
+    }
+    if(leveled > 0){
+      showToast("⭐ LEVEL UP! Sekarang Level " + state.level, "+5 poin stat x" + leveled + " siap dialokasikan");
+    }
+  }
+
+  function checkQuests(){
+    QUESTS.forEach(q => {
+      if(state.unlockedQuests.includes(q.id)) return;
+      if(q.check(state)){
+        state.unlockedQuests.push(q.id);
+        state.unallocated += q.points;
+        state.skills.push(q.skill);
+        showToast("🔓 Secret Quest Terbuka: " + q.name, q.rewardText);
+      }
+    });
+  }
+
+  function logActivity(statKey, name, minutes){
+    const xpGain = Math.max(5, Math.round(minutes * 6));
+    const now = new Date();
+    const hour = now.getHours();
+    const dayKey = now.toISOString().slice(0,10);
+
+    state.log.unshift({ statKey, name, minutes, xp: xpGain, ts: now.getTime() });
+    state.log = state.log.slice(0, 20);
+    state.totalMinutes += minutes;
+    state.statActivityCounts[statKey] = (state.statActivityCounts[statKey]||0) + 1;
+    if(!state.daysLogged.includes(dayKey)) state.daysLogged.push(dayKey);
+    if(hour >= 22 || hour < 4) state.hasNightLog = true;
+    if(hour >= 4 && hour < 7) state.hasEarlyLog = true;
+
+    addXp(xpGain);
+    checkQuests();
+    saveState();
+    render();
+  }
+
+  function allocatePoint(statKey){
+    if(state.unallocated <= 0) return;
+    state.unallocated -= 1;
+    state.stats[statKey] += 1;
+    checkQuests();
+    saveState();
+    render();
+  }
+
+  /* ---------------- RENDER ---------------- */
+
+  function renderHero(){
+    document.getElementById("lvNum").textContent = state.level;
+    const [t, sub] = charTitleFor(state.level);
+    document.getElementById("charTitle").textContent = t;
+    document.getElementById("charSub").textContent = sub;
+
+    const need = xpToNext(state.level);
+    document.getElementById("xpNow").textContent = state.xp + " XP";
+    document.getElementById("xpNeed").textContent = "/ " + need + " XP ke level berikutnya";
+    document.getElementById("xpFill").style.width = Math.min(100, (state.xp/need)*100) + "%";
+  }
+
+  function renderRadar(){
+    const svg = document.getElementById("radarSvg");
+    const cx = 140, cy = 120, R = 78;
+    const values = STAT_ORDER.map(k => state.stats[k]);
+    const maxStat = Math.max(...values);
+    const maxScale = Math.max(10, Math.ceil((maxStat * 1.35) / 5) * 5);
+
+    function pt(i, val){
+      const angle = (-90 + i * 72) * Math.PI / 180;
+      const r = Math.min(val / maxScale, 1) * R;
+      return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
+    }
+    function ptOuter(i, frac){
+      const angle = (-90 + i * 72) * Math.PI / 180;
+      const r = frac * R;
+      return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
+    }
+
+    let parts = [];
+
+    // grid rings
+    [0.34, 0.67, 1].forEach(frac => {
+      const pts = STAT_ORDER.map((_, i) => ptOuter(i, frac).join(",")).join(" ");
+      parts.push('<polygon points="' + pts + '" fill="none" stroke="#47374F" stroke-width="1"></polygon>');
+    });
+    // axis lines + labels
+    STAT_ORDER.forEach((k, i) => {
+      const [x,y] = ptOuter(i, 1);
+      parts.push('<line x1="'+cx+'" y1="'+cy+'" x2="'+x+'" y2="'+y+'" stroke="#47374F" stroke-width="1"></line>');
+      const [lx, ly] = ptOuter(i, 1.28);
+      const meta = STAT_META[k];
+      parts.push('<text x="'+lx+'" y="'+ly+'" fill="'+resolveColor(meta.color)+'" font-size="11" font-family="Rajdhani" font-weight="700" text-anchor="middle" dominant-baseline="middle">'+meta.short+'</text>');
+    });
+    // value polygon
+    const valPts = STAT_ORDER.map((k,i) => pt(i, state.stats[k]).join(",")).join(" ");
+    parts.push('<polygon points="'+valPts+'" fill="rgba(242,184,75,0.22)" stroke="#F2B84B" stroke-width="2"></polygon>');
+    // value dots
+    STAT_ORDER.forEach((k,i) => {
+      const [x,y] = pt(i, state.stats[k]);
+      parts.push('<circle cx="'+x+'" cy="'+y+'" r="3.5" fill="#F2B84B"></circle>');
+    });
+
+    svg.innerHTML = parts.join("");
+  }
+
+  function resolveColor(varStr){
+    // varStr like "var(--str)" -> resolve to hex for SVG text fill
+    const map = { "var(--str)":"#FF6B5B", "var(--end)":"#59D68C", "var(--agi)":"#45D0D6", "var(--int)":"#A78BFA", "var(--spd)":"#FFD666" };
+    return map[varStr] || "#F3EAF6";
+  }
+
+  function renderStats(){
+    const banner = document.getElementById("pointsBanner");
+    const text = document.getElementById("pointsText");
+    if(state.unallocated > 0){
+      banner.classList.add("show");
+      text.textContent = "Kamu punya " + state.unallocated + " poin stat! 👉 alokasikan di bawah";
+    } else {
+      banner.classList.remove("show");
+    }
+
+    const list = document.getElementById("statList");
+    list.innerHTML = STAT_ORDER.map(k => {
+      const meta = STAT_META[k];
+      const val = state.stats[k];
+      const pct = Math.min(100, (val / 30) * 100);
+      return (
+        '<div class="stat-row">' +
+          '<div class="stat-icon" style="background: rgba(255,255,255,0.06); color:'+resolveColor(meta.color)+';">'+meta.icon+'</div>' +
+          '<div class="stat-mid">' +
+            '<div class="stat-name-row"><span class="stat-label">'+meta.label+'</span><span class="stat-val">'+val+'</span></div>' +
+            '<div class="stat-bar-track"><div class="stat-bar-fill" style="width:'+pct+'%; background:'+resolveColor(meta.color)+';"></div></div>' +
+          '</div>' +
+          '<div class="stat-plus'+(state.unallocated>0 ? ' show' : '')+'" data-stat="'+k+'">+</div>' +
+        '</div>'
+      );
+    }).join("");
+
+    list.querySelectorAll(".stat-plus").forEach(btn => {
+      btn.addEventListener("click", () => allocatePoint(btn.getAttribute("data-stat")));
+    });
+  }
+
+  function renderStatTabsAndChips(){
+    const tabs = document.getElementById("statTabs");
+    tabs.innerHTML = STAT_ORDER.map(k => {
+      const meta = STAT_META[k];
+      const active = k === selectedStat;
+      return '<div class="stat-tab'+(active?' active':'')+'" data-stat="'+k+'" style="'+(active ? 'background:'+resolveColor(meta.color)+';' : '')+'">'+meta.icon+' '+meta.label+'</div>';
+    }).join("");
+    tabs.querySelectorAll(".stat-tab").forEach(el => {
+      el.addEventListener("click", () => {
+        selectedStat = el.getAttribute("data-stat");
+        selectedActivity = ACTIVITIES[selectedStat][0].n;
+        renderStatTabsAndChips();
+      });
+    });
+
+    const chips = document.getElementById("activityChips");
+    chips.innerHTML = ACTIVITIES[selectedStat].map(a => {
+      const active = a.n === selectedActivity;
+      return '<div class="chip'+(active?' active':'')+'" data-name="'+a.n+'">'+a.i+' '+a.n+'</div>';
+    }).join("");
+    chips.querySelectorAll(".chip").forEach(el => {
+      el.addEventListener("click", () => {
+        selectedActivity = el.getAttribute("data-name");
+        renderStatTabsAndChips();
+      });
+    });
+  }
+
+  function timeAgo(ts){
+    const diff = Math.floor((Date.now() - ts) / 1000);
+    if(diff < 60) return "baru saja";
+    if(diff < 3600) return Math.floor(diff/60) + " menit lalu";
+    if(diff < 86400) return Math.floor(diff/3600) + " jam lalu";
+    return Math.floor(diff/86400) + " hari lalu";
+  }
+
+  function renderActivityList(){
+    const el = document.getElementById("activityList");
+    if(!state.log.length){
+      el.innerHTML = '<div class="empty-note">Belum ada aktivitas dicatat. Ayo mulai!</div>';
+      return;
+    }
+    el.innerHTML = state.log.slice(0,6).map(item => {
+      const meta = STAT_META[item.statKey];
+      return (
+        '<div class="activity-item">' +
+          '<div class="activity-dot" style="background:'+resolveColor(meta.color)+';"></div>' +
+          '<div class="activity-info"><div class="aname">'+item.name+'</div><div class="ameta">'+item.minutes+' menit · '+timeAgo(item.ts)+'</div></div>' +
+          '<div class="activity-xp">+'+item.xp+' XP</div>' +
+        '</div>'
+      );
+    }).join("");
+  }
+
+  function renderQuests(){
+    const el = document.getElementById("questList");
+    el.innerHTML = QUESTS.map(q => {
+      const unlocked = state.unlockedQuests.includes(q.id);
+      if(unlocked){
+        return (
+          '<div class="quest-card">' +
+            '<div class="quest-icon">'+q.icon+'</div>' +
+            '<div class="quest-body">' +
+              '<div class="quest-title">'+q.name+'</div>' +
+              '<div class="quest-desc">'+q.desc+'</div>' +
+              '<div class="quest-reward">✓ '+q.rewardText+'</div>' +
+            '</div>' +
+          '</div>'
+        );
+      }
+      return (
+        '<div class="quest-card locked">' +
+          '<div class="quest-icon">🔒</div>' +
+          '<div class="quest-body">' +
+            '<div class="quest-title">???</div>' +
+            '<div class="quest-desc">Quest rahasia — selesaikan syarat tersembunyi untuk membukanya.</div>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join("");
+  }
+
+  function renderSkills(){
+    const section = document.getElementById("skillSection");
+    const grid = document.getElementById("skillGrid");
+    if(!state.skills.length){
+      section.style.display = "none";
+      return;
+    }
+    section.style.display = "block";
+    grid.innerHTML = state.skills.map(s => '<div class="skill-badge">✦ '+s+'</div>').join("");
+  }
+
+  function render(){
+    renderHero();
+    renderRadar();
+    renderStats();
+    renderActivityList();
+    renderQuests();
+    renderSkills();
+  }
+
+  /* ---------------- EVENTS ---------------- */
+
+  function initEvents(){
+    document.getElementById("openLogBtn").addEventListener("click", () => {
+      renderStatTabsAndChips();
+      document.getElementById("logPanel").classList.add("open");
+      document.getElementById("openLogBtn").style.display = "none";
+    });
+    document.getElementById("cancelLogBtn").addEventListener("click", () => {
+      document.getElementById("logPanel").classList.remove("open");
+      document.getElementById("openLogBtn").style.display = "block";
+    });
+    document.getElementById("submitLogBtn").addEventListener("click", () => {
+      const minutesInput = document.getElementById("durationInput");
+      let minutes = parseInt(minutesInput.value, 10);
+      if(isNaN(minutes) || minutes < 1) minutes = 1;
+      if(minutes > 180) minutes = 180;
+      logActivity(selectedStat, selectedActivity, minutes);
+      document.getElementById("logPanel").classList.remove("open");
+      document.getElementById("openLogBtn").style.display = "block";
+    });
+    document.getElementById("resetBtn").addEventListener("click", async () => {
+      if(confirm("Yakin mau mulai ulang dari Level 1 dengan stat serendah mungkin? Progres saat ini akan hilang.")){
+        state = defaultState();
+        await saveState();
+        render();
+      }
+    });
+  }
+
+  async function init(){
+    await loadState();
+    initEvents();
+    render();
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("app").classList.add("ready");
+  }
+
+  init();
+
+  if("serviceWorker" in navigator){
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("service-worker.js").catch(() => {});
+    });
+  }
+})();
+</script>
+</body>
+</html>
